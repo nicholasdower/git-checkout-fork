@@ -1,0 +1,62 @@
+#!/usr/bin/env ruby
+
+def fail(message)
+  warn(message)
+  exit 1
+end
+
+def help
+  puts <<~DOC
+    Checks out a branch on a fork.
+
+    Usage: git checkout-fork <user> <branch>
+
+    To install, add this script to your PATH, then run one of the following:
+
+        git config --global alias.checkout-fork '!git-checkout-fork' # All repos
+        git config alias.checkout-fork '!git-checkout-fork'          # Current repo only
+
+    Options:
+        -h       Print this message (Don't use --help)
+  DOC
+  exit
+end
+
+if ARGV.index('--help') || ARGV.index('-h')
+  help
+  exit
+end
+
+if ARGV.size != 2
+  warn("fatal: You must specify a user and branch.\n\n")
+  help
+  exit 1
+end
+
+user = ARGV[0]
+branch = ARGV[1]
+
+def run(command, error)
+  puts "running: #{command}"
+  system(command)
+  fail(error) unless $?.success?
+end
+
+def run_for_result(command, error)
+  puts "running: #{command}"
+  result = `#{command}`
+  fail(error) unless $?.success?
+  result
+end
+
+origin_url = run_for_result('git remote get-url origin', 'fatal: git command failed')
+repo = File.basename(origin_url).strip
+
+`git remote get-url #{user} 2>/dev/null >/dev/null`
+unless $?.success?
+  run("git remote add \"#{user}\" \"git@github.com:#{user}/#{repo}\"", 'fatal: git command failed')
+end
+
+run("git fetch \"#{user}\"", 'fatal: git command failed')
+
+run("git checkout -b \"#{user}/#{branch}\" --track \"#{user}/#{branch}\"", 'fatal: git command failed')
