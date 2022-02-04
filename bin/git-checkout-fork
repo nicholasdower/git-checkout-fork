@@ -9,7 +9,10 @@ def help
   puts <<~DOC
     Checks out a branch on a fork.
 
-    Usage: git checkout-fork <user> <branch>
+    Usage:
+      git checkout-fork <user>:<branch>
+      or
+      git checkout-fork <user> <branch>
 
     To install, add this script to your PATH, then run one of the following:
 
@@ -27,14 +30,20 @@ if ARGV.index('--help') || ARGV.index('-h')
   exit
 end
 
-if ARGV.size != 2
-  warn("fatal: You must specify a user and branch.\n\n")
+if ARGV.size == 1
+  parts = ARGV[0].split(':')
+  user = parts[0]
+  branch = parts[1]
+elsif ARGV.size == 2
+  user = ARGV[0]
+  branch = ARGV[1]
+end
+
+if user.nil? || user.strip.empty? || branch.nil? || branch.strip.empty?
+  warn("fatal: Invalid arguments: #{ARGV}.\n\n")
   help
   exit 1
 end
-
-user = ARGV[0]
-branch = ARGV[1]
 
 def run(command, error)
   puts "running: #{command}"
