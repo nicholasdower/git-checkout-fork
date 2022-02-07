@@ -68,4 +68,13 @@ end
 
 run("git fetch \"#{user}\"", 'fatal: git command failed')
 
-run("git checkout -b \"#{user}/#{branch}\" --track \"#{user}/#{branch}\"", 'fatal: git command failed')
+local_branch_name = "#{user}-fork/#{branch}"
+system("git rev-parse --verify \"#{local_branch_name}\" > /dev/null 2> /dev/null")
+
+if $?.success?
+  warn("warning: local branch already exists: #{local_branch_name}")
+  run("git checkout \"#{local_branch_name}\"", 'fatal: git command failed')
+else
+  run("git checkout -b \"#{local_branch_name}\" --track \"refs/remotes/#{user}/#{branch}\"", 'fatal: git command failed')
+end
+
